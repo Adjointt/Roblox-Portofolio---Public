@@ -1,0 +1,68 @@
+local spawnMap = game.Workspace:WaitForChild("SpawnMap", 10)
+if not spawnMap then
+	warn("❌ ERROR: SpawnMap not found!")
+	return
+end
+
+local egg = spawnMap:WaitForChild("Egg", 10)
+if not egg then
+	warn("❌ ERROR: Egg not found in SpawnMap!")
+	return
+end
+
+local prompt = egg:FindFirstChild("ProximityPrompt")
+if not prompt then
+	warn("❌ ERROR: ProximityPrompt not found!")
+	return
+end
+
+local price = 10
+local pets = {"Dog", "Cat", "Dragon"}
+local chances = {50, 40, 10}
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local spawnPetEvent = ReplicatedStorage:WaitForChild("SpawnPetEvent", 10)
+if not spawnPetEvent then
+	warn("❌ ERROR: SpawnPetEvent not found in ReplicatedStorage!")
+	return
+end
+
+local debounce = false
+local DEBOUNCE_TIME = 2
+
+prompt.Triggered:Connect(function(player)
+	if debounce then return end
+	debounce = true
+
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		print("Leaderstats not found for " .. player.Name)
+		task.wait(DEBOUNCE_TIME)
+		debounce = false
+		return
+	end
+
+	local clicks = leaderstats:FindFirstChild("Clicks")
+	if not clicks or clicks.Value < price then
+		print("Not enough clicks! Need " .. price .. ", have " .. (clicks and clicks.Value or 0))
+		task.wait(DEBOUNCE_TIME)
+		debounce = false
+		return
+	end
+
+	local randomRoll = math.random(1, 100)
+	local chanceSum = 0
+	local selectedPet = pets[#pets]
+	for i, chance in ipairs(chances) do
+		chanceSum = chanceSum + chance
+		if randomRoll <= chanceSum then
+			selectedPet = pets[i]
+			break
+		end
+	end
+
+	print(player.Name .. " is attempting to hatch a " .. selectedPet .. "!")
+	spawnPetEvent:FireServer(selectedPet)
+
+	task.wait(DEBOUNCE_TIME)
+	debounce = false
+end)
