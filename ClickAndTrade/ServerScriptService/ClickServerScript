@@ -1,0 +1,183 @@
+local DataStoreService = game:GetService("DataStoreService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Require the RebirthLevels module
+local RebirthLevels = require(ReplicatedStorage.RebirthLevels)
+
+-- Click Event
+local clickEvent = ReplicatedStorage:FindFirstChild("ClickEvent") or Instance.new("RemoteEvent")
+clickEvent.Name = "ClickEvent"
+clickEvent.Parent = ReplicatedStorage
+
+-- Rebirth Event
+local rebirthEvent = ReplicatedStorage:FindFirstChild("RebirthEvent") or Instance.new("RemoteEvent")
+rebirthEvent.Name = "RebirthEvent"
+rebirthEvent.Parent = ReplicatedStorage
+
+-- changecurrency and changecurrencysub Events (for spending Clicks, e.g., to buy Mana)
+local changecurrency = ReplicatedStorage:FindFirstChild("ChangeGoldVal") or Instance.new("RemoteEvent")
+changecurrency.Name = "ChangeGoldVal"
+changecurrency.Parent = ReplicatedStorage
+
+local changecurrencysub = ReplicatedStorage:FindFirstChild("ChangeGoldValSub") or Instance.new("RemoteEvent")
+changecurrencysub.Name = "ChangeGoldValSub"
+changecurrencysub.Parent = ReplicatedStorage
+
+-- DataStore to save player data
+local playerDataStore = DataStoreService:GetDataStore("PlayerData")
+
+-- Function to load player data
+local function loadPlayerData(player)
+	local key = "Player_" .. player.UserId
+	local success, data = pcall(function()
+		return playerDataStore:GetAsync(key)
+	end)
+	if success and data then
+		return data
+	else
+		return { Clicks = 0, Rebirths = 0, Gems = 0 } -- Default values
+	end
+end
+
+-- Function to save player data
+local function savePlayerData(player, data)
+	local key = "Player_" .. player.UserId
+	local success, err = pcall(function()
+		playerDataStore:SetAsync(key, data)
+	end)
+	if not success then
+		warn("Failed to save data for " .. player.Name .. ": " .. err)
+	end
+end
+
+-- Initialize leaderstats
+Players.PlayerAdded:Connect(function(player)
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name = "leaderstats"
+	leaderstats.Parent = player
+
+	local clicks = Instance.new("IntValue")
+	local rebirths = Instance.new("IntValue")
+	local gems = Instance.new("IntValue")
+
+	clicks.Name = "Clicks"
+	rebirths.Name = "Rebirths"
+	gems.Name = "Gems"
+
+	-- Load saved data
+	local savedData = loadPlayerData(player)
+	clicks.Value = savedData.Clicks or 0
+	rebirths.Value = savedData.Rebirths or 0
+	gems.Value = savedData.Gems or 0
+
+	clicks.Parent = leaderstats
+	rebirths.Parent = leaderstats
+	gems.Parent = leaderstats
+
+	print(player.Name .. " joined with Clicks = " .. clicks.Value .. ", Rebirths = " .. rebirths.Value .. ", Gems = " .. gems.Value)
+
+	-- Save data when the player leaves
+	player.AncestryChanged:Connect(function()
+		if player.Parent == nil then -- Player is leaving
+			savePlayerData(player, {
+				Clicks = clicks.Value,
+				Rebirths = rebirths.Value,
+				Gems = gems.Value
+			})
+		end
+	end)
+end)
+
+-- Handle clicks (server authoritative)
+clickEvent.OnServerEvent:Connect(function(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+
+	if not leaderstats then
+		warn("No leaderstats for " .. player.Name)
+		return
+	end
+
+	local clicks = leaderstats:FindFirstChild("Clicks")
+	if not clicks then
+		warn("No Clicks for " .. player.Name)
+		return
+	end
+
+	local rebirths = leaderstats:FindFirstChild("Rebirths")
+	if not rebirths then
+		warn("No Rebirths for " .. player.Name)
+		return
+	end
+
+	clicks.Value = clicks.Value + 10000 -- Increment by 1 (no multiplier) Before release !!!
+	print(player.Name .. " clicked! Clicks now: " .. clicks.Value)
+end)
+
+-- Handle changecurrency (alternative way to earn Clicks)
+changecurrency.OnServerEvent:Connect(function(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local clicks = leaderstats:FindFirstChild("Clicks")
+		if clicks then
+			clicks.Value = clicks.Value + 1 -- Increment by 1 (no multiplier)
+			print(player.Name .. " gained 1 Click via changecurrency. New total: " .. clicks.Value)
+		end
+	end
+end)
+
+-- Handle changecurrencysub (spending Clicks, e.g., for Mana)
+changecurrencysub.OnServerEvent:Connect(function(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local clicks = leaderstats:FindFirstChild("Clicks")
+		if clicks and clicks.Value >= 50 then
+			clicks.Value = clicks.Value - 50
+			print(player.Name .. " spent 50 Clicks. New total: " .. clicks.Value)
+		elseif clicks then
+			print(player.Name .. " doesn’t have enough Clicks to spend 50!")
+		end
+	end
+end)
+
+-- Handle rebirth
+rebirthEvent.OnServerEvent:Connect(function(player, rebirth_id)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		warn("No leaderstats for " .. player.Name)
+		return
+	end
+
+	local clicks = leaderstats:FindFirstChild("Clicks")
+	local rebirths = leaderstats:FindFirstChild("Rebirths")
+	local gems = leaderstats:FindFirstChild("Gems")
+	if not (clicks and rebirths and gems) then
+		warn("Missing leaderstats values for " .. player.Name)
+		return
+	end
+
+	-- Validate rebirth_id (must be between 1 and 30)
+	if rebirth_id < 1 or rebirth_id > 30 then
+		print("Invalid rebirth level: " .. rebirth_id)
+		return
+	end
+
+	-- Get rebirth data for the specified rebirth_id (level)
+	local rebirthData = RebirthLevels.GetRebirthData(rebirth_id)
+	if not rebirthData then
+		print("Invalid rebirth level: " .. rebirth_id)
+		return
+	end
+
+	-- Check if the player has enough Clicks
+	local rebirthCost = rebirthData.ClicksRequired
+	if clicks.Value >= rebirthCost then
+		-- Apply rebirth
+		clicks.Value = 0 -- Reset Clicks
+		rebirths.Value = rebirths.Value + rebirthData.RebirthsGained -- Increment Rebirths by the specified amount
+		gems.Value = gems.Value + rebirthData.GemsRewarded -- Award Gems
+		print(player.Name .. " rebirthed at level " .. rebirth_id .. " for " .. rebirthData.RebirthsGained .. " rebirths! Clicks reset to " .. clicks.Value .. ", gained " .. rebirthData.RebirthsGained .. " Rebirths (new total: " .. rebirths.Value .. "), gained " .. rebirthData.GemsRewarded .. " Gems")
+	else
+		print(player.Name .. " needs " .. (rebirthCost - clicks.Value) .. " more Clicks for rebirth level " .. rebirth_id)
+	end
+end)
