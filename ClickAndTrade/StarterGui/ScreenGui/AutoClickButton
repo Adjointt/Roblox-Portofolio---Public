@@ -1,0 +1,24 @@
+local autoClickButton = script.Parent
+local player = game.Players.LocalPlayer
+local clickEvent = game.ReplicatedStorage:FindFirstChild("ClickEvent")
+local autoClickEnabled = false
+
+-- Function to perform auto-clicking
+local function autoClick()
+	while autoClickEnabled do
+		wait(0.2) -- Adjust click speed
+		if clickEvent then
+			clickEvent:FireServer() -- Send click update to server
+		end
+	end
+end
+
+-- When the auto-click button is clicked
+autoClickButton.MouseButton1Click:Connect(function()
+	autoClickEnabled = not autoClickEnabled  -- Toggle auto-clicking
+
+	if autoClickEnabled then
+		-- Start auto-click in a new thread
+		task.spawn(autoClick)
+	end
+end)
