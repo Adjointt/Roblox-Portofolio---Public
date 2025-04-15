@@ -1,0 +1,38 @@
+local SpawnTwo = game.Workspace.StageTwo.SpawnLocation
+local SpawnThree = game.Workspace.StageThree.SpawnLocation
+local SpawnFour = game.Workspace.StageFour.SpawnLocation
+local SpawnFive = game.Workspace.StageFive.SpawnLocation
+local FinishSpawn = game.Workspace.Finish.SpawnLocation
+
+game.Players.PlayerAdded:Connect(function(Player)
+	SpawnTwo.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") then
+			Player.Team = game.Teams["Stage Two"]
+		end
+	end)
+	
+	SpawnThree.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") then
+			Player.Team = game.Teams["Stage Three"]
+		end
+	end)
+	
+	SpawnFour.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") then
+			Player.Team = game.Teams["Stage Four"]
+		end
+	end)
+	
+	SpawnFive.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") then
+			Player.Team = game.Teams["Stage Five"]
+		end
+	end)
+	
+	FinishSpawn.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") then
+			Player.Team = game.Teams["Finish"]
+		end
+	end)
+
+end)
