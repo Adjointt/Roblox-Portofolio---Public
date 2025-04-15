@@ -1,0 +1,8 @@
+local MarketplaceService = game:GetService("MarketplaceService")
+local Player = game.Players.LocalPlayer
+
+local ProductID = 3242688744 -- My Support Dev Product from Parkour for Beginners
+
+script.Parent.MouseButton1Click:Connect(function()
+	MarketplaceService:PromptProductPurchase(Player, ProductID)
+end)
