@@ -1,0 +1,41 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local HeartbeatEvent = ReplicatedStorage:WaitForChild("HeartbeatEvent")
+
+local HEARTBEAT_INTERVAL = 10  -- Heartbeat frequency in seconds
+local RETRY_INTERVAL = 5       -- Retry frequency if heartbeat fails
+local INPUT_SIMULATION_INTERVAL = 30  -- Interval to simulate user input in seconds
+
+local function sendHeartbeat()
+	local success = pcall(function()
+		HeartbeatEvent:FireServer()
+	end)
+
+	if not success then
+		warn("Failed to send heartbeat. Retrying in " .. RETRY_INTERVAL .. " seconds.")
+		task.wait(RETRY_INTERVAL)
+		sendHeartbeat()
+	end
+end
+
+local function simulateInput()
+	-- This function fakes user activity by simulating a small input event
+	UserInputService.InputBegan:Fire(Enum.UserInputType.MouseMovement, false)
+	UserInputService.InputBegan:Once(Enum.UserInputType.MouseMovement, false)
+end
+
+-- Continuously send heartbeats
+task.spawn(function()
+	while true do
+		sendHeartbeat()
+		task.wait(HEARTBEAT_INTERVAL)
+	end
+end)
+
+-- Periodically simulate input to keep Roblox from disconnecting
+task.spawn(function()
+	while true do
+		simulateInput()
+		task.wait(INPUT_SIMULATION_INTERVAL)
+	end
+end)
