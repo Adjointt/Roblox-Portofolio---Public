@@ -1,0 +1,25 @@
+local BadgeService = game:GetService("BadgeService")
+local BadgeID = 1113850394483203
+local Players = game:GetService("Players")
+
+local function checkBadge(player, BadgeID)
+	local success, hasBadge = pcall(function()
+		return BadgeService:UserHasBadgeAsync(player.UserId, BadgeID)
+	end)
+
+	if success then
+		if hasBadge then
+			print(player.Name .. " owns the badge!")
+		else
+			print(player.Name .. " does not own the badge.")
+			BadgeService:AwardBadge(player.UserId,BadgeID)
+			
+		end
+	else
+		warn("Error while checking if player has badge: " .. tostring(hasBadge))
+	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	checkBadge(player, BadgeID)
+end)
