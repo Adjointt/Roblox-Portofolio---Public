@@ -1,0 +1,9 @@
+local button = script.Parent
+local player = game.Players.LocalPlayer
+local clickEvent = game.ReplicatedStorage:FindFirstChild("ClickEvent")
+
+button.MouseButton1Click:Connect(function()
+	if clickEvent then
+		clickEvent:FireServer() -- Send click update to server
+	end
+end)
