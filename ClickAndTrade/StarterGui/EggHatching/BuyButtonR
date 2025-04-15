@@ -1,0 +1,124 @@
+local Player = game.Players.LocalPlayer
+local RS = game.ReplicatedStorage
+local TS = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local MS = game:GetService("MarketplaceService")
+
+function rotateEgg(Egg, Rot, NumberTime)
+	local TI = TweenInfo.new(NumberTime)
+	local Goal = {Orientation = Vector3.new(0,0,Rot)}
+	local Tween = TS:Create(Egg.PrimaryPart, TI, Goal)
+	Tween:Play()
+end
+
+function eggAnimation(Egg, Result)
+	local FrameClone = Player.PlayerGui.UIelements.HatchFrame:Clone()
+	local Camera = Instance.new("Camera", FrameClone)
+	game.Lighting.Blur.Size = 26
+	FrameClone.CurrentCamera = Camera
+	FrameClone.Parent = Player.PlayerGui.EggHatching
+	Camera.CFrame = CFrame.new(0,0,0):ToWorldSpace(CFrame.new(0,0,5.5))
+	for i = 1,3 do
+		spawn(function()
+			local Folder = RS.Pets.Models:FindFirstChild(Result[i])
+			local Type
+			for _,v in pairs(Egg["Pets"]) do
+				if v.Name == Result[i] then
+					Type = v.Type 
+				end
+			end
+			local PetClone = Folder:FindFirstChild(Type):Clone()
+			local EggClone = workspace.SpawnMap.EggPlates:FindFirstChild(script.Parent.Parent.CurrentTarget.Value).EggModel:Clone()
+			local Rarity = Folder.Settings.Rarity.Value
+			local RarityColor = RS.Pets.Rarities:FindFirstChild(Rarity).Color.Value
+			local tweenInfo = TweenInfo.new(.35, Enum.EasingStyle.Quad)
+			local EggDelay = .075
+			local EggPos
+			local PetRot
+			if i == 1 then
+				EggPos = 0
+				PetRot = 180
+			elseif i == 2 then
+				EggPos = -4
+				PetRot = 220
+			elseif i == 3 then
+				EggPos = 4
+				PetRot = 140
+			end
+			EggClone.Parent = FrameClone
+			EggClone:SetPrimaryPartCFrame(CFrame.new(EggPos,0,0) - Vector3.new(0,10,0))
+			local bringEgg = TS:Create(EggClone.PrimaryPart, tweenInfo, {Position = EggClone.PrimaryPart.Position + Vector3.new(0,10,0)})
+			bringEgg:Play()
+			wait(.35)
+			for i = 1,7 do
+				rotateEgg(EggClone, 15, EggDelay)
+				wait(EggDelay)
+				rotateEgg(EggClone, -15, EggDelay)
+				wait(EggDelay)
+				EggDelay = EggDelay - .005
+			end
+			-- 2.78
+			rotateEgg(EggClone, 0, EggDelay)	
+			wait(EggDelay)
+			FrameClone["FlashEffect"..i]:TweenSize(UDim2.new(1.5,0,1.5,2), "Out", "Linear", .2)
+			spawn(function()
+				for t = 0,1,.1 do
+					FrameClone["FlashEffect"..i].ImageTransparency = t
+					wait(.05)
+				end
+			end)
+			wait(.2)
+			PetClone.Parent = FrameClone
+			PetClone:SetPrimaryPartCFrame(CFrame.new(EggPos,0,0) * CFrame.Angles(0, math.rad(PetRot), 0))
+			EggClone:Destroy()
+			FrameClone["PetName"..i].Text = Result[i]
+			FrameClone["PetRarity"..i].Text = Rarity
+			FrameClone["PetRarity"..i].TextColor3 = RarityColor
+			wait(1)
+			for i = 1,10 do
+				game.Lighting.Blur.Size = game.Lighting.Blur.Size - 2.6
+				wait(.05)
+			end
+			FrameClone["PetName"..i].Text = ""
+			FrameClone["PetRarity"..i].Text = ""
+			FrameClone:TweenPosition(UDim2.new(0,0,1,0), "Out", "Quad", .2)
+			wait(.2)
+			FrameClone:Destroy()
+		end)
+	end
+end
+
+function eggRequest()
+	local Egg = require(RS.Pets.Eggs)[script.Parent.Parent.CurrentTarget.Value]
+	if Egg ~= nil then
+		if script.Parent.Parent.CurrentTarget.Value ~= "None" then
+			if (Player.Character.HumanoidRootPart.Position - workspace.SpawnMap.EggPlates:FindFirstChild(script.Parent.Parent.CurrentTarget.Value).UIanchor.Position).Magnitude <= 10 then
+				local Result, Message = RS.RemoteEvents.EggOpened:InvokeServer(script.Parent.Parent.CurrentTarget.Value, "Triple")
+				if Message == nil and Result ~= "Error" and Result ~= nil then
+					eggAnimation(Egg, Result)
+				else
+					if Message ~= nil then
+						print("Error, ".. Message)
+						if Message == "Player Doesn't Own Gamepass" then
+							MS:PromptGamePassPurchase(Player, game.ReplicatedStorage.GamepassIDs.TripleOpen.Value)
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+script.Parent.MouseButton1Click:Connect(function()
+	eggRequest()
+end)
+
+UIS.InputBegan:connect(function(input,gameProcessed)
+	if input.UserInputType == Enum.UserInputType.Keyboard then
+		if input.KeyCode == Enum.KeyCode.R then
+			if UIS:GetFocusedTextBox() == nil then
+				eggRequest()
+			end
+		end
+	end
+end)
