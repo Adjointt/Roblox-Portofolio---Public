@@ -1,0 +1,62 @@
+local StageGui = script.Parent
+local StageLabel = StageGui.StageLabel
+local StageTimer = StageGui.TimerLabel
+
+local Player = game.Players.LocalPlayer
+local StartDebounce = false
+local EndDebounce = false
+local InStage = false
+
+wait(2)
+
+local Stages = {
+	game.Workspace.StageOne,
+	game.Workspace.StageTwo,
+	game.Workspace.StageThree,
+	game.Workspace.StageFour,
+	game.Workspace.StageFive
+}
+
+local function StartTimer()
+	local Minutes = 0
+	local Seconds = 0
+	
+	repeat
+		Seconds = Seconds + 1
+		
+		if Seconds == 60  then
+			Minutes = Minutes + 1
+			Seconds = 0
+		end
+		
+		StageTimer.Text = string.format("%02d", Minutes) .. ":" .. string.format("%02d", Seconds)
+		wait(1)
+	until not InStage
+end
+
+local function EndTimer()
+	InStage = false
+	StageTimer.Text = "00:00"
+end
+
+for i, stage in pairs(Stages) do
+	stage.Start.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") and not StartDebounce then
+			StartDebounce = true
+			InStage = true
+			StageLabel.Text = stage.Start.StageName.Value
+			StartTimer()
+		end
+	end)
+	
+	stage.End.Touched:Connect(function(Hit)
+		if Hit.Parent:FindFirstChild("Humanoid") and not EndDebounce then
+			EndDebounce = true
+			--StageLabel.Text = stage.Start.StageName.Value
+			StageLabel.Text = "Stage Complete"
+			EndTimer()
+			StartDebounce = false
+			EndDebounce = false
+		end	
+	end)
+end
