@@ -1,0 +1,12 @@
+local player = game.Players.LocalPlayer
+local spawnMap = game.Workspace:WaitForChild("SpawnMap", 10)
+local gemShop = spawnMap:WaitForChild("GemShop", 10)
+local prompt = gemShop:FindFirstChild("ProximityPrompt")
+
+local playerGui = player:WaitForChild("PlayerGui")
+local screenGui = playerGui:WaitForChild("ScreenGui") 
+local gemShopFrame = screenGui.GemShop --game.StarterGui.ScreenGui.GemShop
+
+prompt.Triggered:Connect(function(player)
+	gemShopFrame.Visible = true
+end)
