@@ -1,0 +1,22 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SpawnOwnedPetEvent = ReplicatedStorage:WaitForChild("SpawnOwnedPetEvent")
+local UserInputService = game:GetService("UserInputService")
+
+-- Example: Change this to dynamically get a pet from inventory later
+local petName = "Dog"
+local debounce = false
+local DEBOUNCE_TIME = 1
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if debounce then return end
+
+	-- Only spawn on a specific key, e.g., "P" for "Pet"
+	if input.KeyCode == Enum.KeyCode.P then
+		debounce = true
+		print("📢 Requesting to spawn owned pet: " .. petName)
+		SpawnOwnedPetEvent:FireServer(petName)
+		task.wait(DEBOUNCE_TIME)
+		debounce = false
+	end
+end)
