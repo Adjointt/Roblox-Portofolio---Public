@@ -1,0 +1,19 @@
+game.Players.PlayerAdded:Connect(function(player)
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name = "leaderstats"
+	leaderstats.Parent = player
+
+	local clicks = Instance.new("IntValue")
+	local rebirths = Instance.new("IntValue")
+	local gems = Instance.new("IntValue")
+	clicks.Name = "Clicks"
+	clicks.Value = 0
+	clicks.Parent = leaderstats
+	rebirths.Name = "Rebirths"	
+	rebirths.Value = 0
+	rebirths.Parent = leaderstats
+	gems.Name = "Gems"
+	gems.Value = 0
+	gems.Parent = leaderstats
+
+end)
