@@ -1,0 +1,21 @@
+local MarketplaceService = game:GetService("MarketplaceService")
+--local Players = game:GetService("Players")
+local Player = game.Players.LocalPlayer
+
+local GamepassID = 1111048234 -- My Support Pass from Parkour for Beginners
+
+local function PromptPurchase()
+	local HasPass = false
+	local Success, ErrorMessage pcall(function()
+		HasPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, GamepassID)
+	end)
+	if not HasPass then
+		MarketplaceService:PromptGamePassPurchase(Player, GamepassID)
+	else
+		print("You can only buy this game pass once.")
+	end
+end
+
+script.Parent.MouseButton1Click:Connect(function()
+	PromptPurchase()
+end)
