@@ -1,0 +1,13 @@
+local MarketplaceService = game:GetService("MarketplaceService")
+local GamepassID = 1111048234 -- My Support Pass from Parkour for Beginners
+
+--[[MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(Player,ID,WasPurchased)
+	if ID == GamepassID and WasPurchased == true then
+		local NewPart = Instance.new("Part", game.Workspace)
+		NewPart.Position = Vector3(0,20,0)
+		NewPart.BrickColor = BrickColor.new("White")
+		NewPart.Material = Enum.Material.Neon
+
+
+	end
+end)]]
